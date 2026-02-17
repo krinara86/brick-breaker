@@ -469,3 +469,11 @@ body {
 .chat-messages::-webkit-scrollbar-thumb:hover {
   background: var(--border-focus);
 }
+
+/* --- Mobile --- */
+@media (max-width: 768px) {
+  .narrator-sidebar { display: none; }
+  .chat-panel { width: 100%; position: absolute; right: 0; top: 48px; bottom: 0; z-index: 10; }
+  .app-header { padding: 0 10px; }
+  .chat-toggle { padding: 6px 10px; }
+}

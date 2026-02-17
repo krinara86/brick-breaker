@@ -166,7 +166,13 @@ export class PlayScene extends Phaser.Scene {
       if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
       this.togglePause();
     });
-
+    // --- Touch: tap to launch ball ---
+    this.input.on('pointerdown', () => {
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+      if (!this.isLaunched) {
+        this.launchBall();
+      }
+    });
     // Listen for config changes from LLM
     gameEventBus.on('game:configChanged', () => {
       this.config = gameAPI.getConfig();
@@ -175,6 +181,16 @@ export class PlayScene extends Phaser.Scene {
     // Listen for powerup spawns from API
     gameEventBus.on('powerup:spawn', ({ type, x, y }) => {
       this.createPowerUpDrop(type, x, y);
+    });
+
+    // --- On-screen pause button (for mobile) ---
+    const pauseBtn = this.add.text(width - 16, 36, '⏸', {
+      fontSize: '20px',
+    }).setOrigin(1, 0).setInteractive({ useHandCursor: true }).setAlpha(0.4);
+    pauseBtn.on('pointerdown', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+      event.stopPropagation();
+      this.togglePause();
+      pauseBtn.setText(this.isPaused ? '▶️' : '⏸');
     });
   }
 
