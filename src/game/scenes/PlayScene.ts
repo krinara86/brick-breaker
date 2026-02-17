@@ -4,44 +4,45 @@ import { gameEventBus } from '../../types/events';
 import { BrickType, PowerUpType, LevelSpec, BrickDef } from '../../types/level';
 import { GameConfig } from '../../types/config';
 
-/** Color mapping for brick types and hit counts */
+/** Modern color palette for bricks */
 const BRICK_COLORS: Record<string, number> = {
-  standard: 0x5b8def,
-  multi_3: 0xef5b5b,
-  multi_2: 0xf0923b,
-  multi_1: 0xf0c43b,
-  indestructible: 0x4a4a58,
-  powerup: 0x34d399,
-  explosive: 0xc084fc,
+  standard: 0x3b82f6,    // bright blue
+  multi_3: 0xef4444,      // red
+  multi_2: 0xf59e0b,      // amber
+  multi_1: 0xeab308,      // yellow
+  indestructible: 0x64748b, // slate
+  powerup: 0x10b981,      // emerald
+  explosive: 0xa855f7,    // purple
 };
 
 const POWERUP_COLORS: Record<string, number> = {
-  [PowerUpType.MultiBall]: 0x44ffff,
-  [PowerUpType.WidePaddle]: 0x44ff44,
-  [PowerUpType.NarrowPaddle]: 0xff4444,
-  [PowerUpType.FastBall]: 0xff8844,
-  [PowerUpType.SlowBall]: 0x4488ff,
-  [PowerUpType.Laser]: 0xff44ff,
-  [PowerUpType.StickyPaddle]: 0xffff44,
-  [PowerUpType.ExtraLife]: 0xff88ff,
-  [PowerUpType.FireBall]: 0xff6600,
+  [PowerUpType.MultiBall]: 0x06b6d4,   // cyan
+  [PowerUpType.WidePaddle]: 0x22c55e,   // green
+  [PowerUpType.NarrowPaddle]: 0xef4444, // red
+  [PowerUpType.FastBall]: 0xf97316,     // orange
+  [PowerUpType.SlowBall]: 0x3b82f6,     // blue
+  [PowerUpType.Laser]: 0xec4899,        // pink
+  [PowerUpType.StickyPaddle]: 0xeab308, // yellow
+  [PowerUpType.ExtraLife]: 0xd946ef,    // fuchsia
+  [PowerUpType.FireBall]: 0xf97316,     // orange
 };
 
-interface BrickSprite extends Phaser.GameObjects.Rectangle {
+interface BrickSprite extends Phaser.GameObjects.Image {
   brickData: BrickDef & { hitsLeft: number };
+  brickColor: number;
 }
 
-interface PowerUpSprite extends Phaser.GameObjects.Rectangle {
+interface PowerUpSprite extends Phaser.GameObjects.Image {
   powerUpType: PowerUpType;
 }
 
 export class PlayScene extends Phaser.Scene {
   // Game objects
-  private paddle!: Phaser.GameObjects.Rectangle;
-  private balls: Phaser.GameObjects.Arc[] = [];
+  private paddle!: Phaser.GameObjects.Image;
+  private balls: Phaser.GameObjects.Image[] = [];
   private bricks: BrickSprite[] = [];
   private powerUps: PowerUpSprite[] = [];
-  private lasers: Phaser.GameObjects.Rectangle[] = [];
+  private lasers: Phaser.GameObjects.Image[] = [];
 
   // Physics velocities (manual, not Phaser physics for more control)
   private ballVelocities: { x: number; y: number }[] = [];
@@ -87,6 +88,16 @@ export class PlayScene extends Phaser.Scene {
 
     this.cameras.main.setBackgroundColor(this.config.visual.backgroundColor);
 
+    // Subtle background grid
+    const bgGrid = this.add.graphics();
+    bgGrid.lineStyle(1, 0xffffff, 0.03);
+    for (let x = 0; x <= width; x += 40) {
+      bgGrid.lineBetween(x, 0, x, height);
+    }
+    for (let y = 0; y <= height; y += 40) {
+      bgGrid.lineBetween(0, y, width, y);
+    }
+
     // --- HUD ---
     this.scoreText = this.add.text(16, 12, 'Score: 0', {
       fontSize: '13px', fontFamily: '"IBM Plex Mono", monospace', color: '#e4e4e9',
@@ -105,11 +116,10 @@ export class PlayScene extends Phaser.Scene {
     }).setOrigin(0.5).setAlpha(0);
 
     // --- Paddle ---
-    this.paddle = this.add.rectangle(
-      width / 2, height - 40,
-      this.config.paddle.width, this.config.paddle.height,
-      0x6d5dfc
-    );
+    this.paddle = this.add.image(
+      width / 2, height - 40, 'paddle'
+    ).setTint(0x6d5dfc)
+     .setDisplaySize(this.config.paddle.width, this.config.paddle.height);
 
     // --- Particle emitter ---
     this.particles = this.add.particles(0, 0, undefined, {
@@ -319,16 +329,18 @@ export class PlayScene extends Phaser.Scene {
       const y = this.GAME_TOP + this.BRICK_PADDING + brickDef.row * (brickHeight + this.BRICK_PADDING) + brickHeight / 2;
 
       const color = this.getBrickColor(brickDef);
-      const brick = this.add.rectangle(x, y, brickWidth - 2, brickHeight - 2, color) as BrickSprite;
+      const texKey = brickDef.type === BrickType.Indestructible ? 'brick_metal' : 'brick';
+      const brick = this.add.image(x, y, texKey)
+        .setDisplaySize(brickWidth - 2, brickHeight - 2)
+        .setTint(color) as BrickSprite;
       brick.brickData = { ...brickDef, hitsLeft: brickDef.hits ?? 1 };
+      brick.brickColor = color;
 
       // Visual flair for special bricks
-      if (brickDef.type === BrickType.Indestructible) {
-        brick.setStrokeStyle(2, 0xaaaaaa);
-      } else if (brickDef.type === BrickType.PowerUp) {
-        brick.setStrokeStyle(1, 0xffffff);
+      if (brickDef.type === BrickType.PowerUp) {
+        brick.setAlpha(0.9);
       } else if (brickDef.type === BrickType.Explosive) {
-        brick.setStrokeStyle(1, 0xff00ff);
+        brick.setAlpha(0.95);
       }
 
       this.bricks.push(brick);
@@ -346,14 +358,13 @@ export class PlayScene extends Phaser.Scene {
 
   // --- Ball management ---
 
-  private createBall(): Phaser.GameObjects.Arc {
+  private createBall(): Phaser.GameObjects.Image {
     const { width, height } = this.scale;
-    const ball = this.add.circle(
+    const ball = this.add.image(
       this.paddle?.x ?? width / 2,
       height - 40 - this.config.paddle.height / 2 - this.config.ball.radius - 2,
-      this.config.ball.radius,
-      0xffffff
-    );
+      'ball'
+    ).setDisplaySize(this.config.ball.radius * 3, this.config.ball.radius * 3);
     this.balls.push(ball);
     this.ballVelocities.push({ x: 0, y: 0 });
     return ball;
@@ -391,7 +402,7 @@ export class PlayScene extends Phaser.Scene {
 
   // --- Collision detection ---
 
-  private checkPaddleCollision(ball: Phaser.GameObjects.Arc, vel: { x: number; y: number }): void {
+  private checkPaddleCollision(ball: Phaser.GameObjects.Image, vel: { x: number; y: number }): void {
     if (vel.y < 0) return; // Ball moving up
 
     const paddleTop = this.paddle.y - this.config.paddle.height / 2;
@@ -425,7 +436,7 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
-  private checkBrickCollisions(ball: Phaser.GameObjects.Arc, vel: { x: number; y: number }): void {
+  private checkBrickCollisions(ball: Phaser.GameObjects.Image, vel: { x: number; y: number }): void {
     for (let i = this.bricks.length - 1; i >= 0; i--) {
       const brick = this.bricks[i];
       if (!this.circleRectOverlap(ball, this.config.ball.radius, brick)) continue;
@@ -473,7 +484,8 @@ export class PlayScene extends Phaser.Scene {
     } else {
       // Update color for remaining hits
       const color = this.getBrickColor({ ...data, hits: data.hitsLeft });
-      brick.setFillStyle(color);
+      brick.setTint(color);
+      brick.brickColor = color;
       // Hit flash
       this.tweens.add({
         targets: brick,
@@ -491,7 +503,7 @@ export class PlayScene extends Phaser.Scene {
     // Particles
     if (this.config.visual.particlesEnabled) {
       this.particles.setPosition(brick.x, brick.y);
-      this.particles.setParticleTint(brick.fillColor);
+      this.particles.setParticleTint(brick.brickColor);
       this.particles.explode(8);
     }
 
@@ -558,9 +570,10 @@ export class PlayScene extends Phaser.Scene {
 
   private createPowerUpDrop(type: PowerUpType, x: number, y: number): void {
     const color = POWERUP_COLORS[type] ?? 0xffffff;
-    const drop = this.add.rectangle(x, y, 20, 12, color) as PowerUpSprite;
+    const drop = this.add.image(x, y, 'powerup')
+      .setTint(color)
+      .setDisplaySize(22, 14) as PowerUpSprite;
     drop.powerUpType = type;
-    drop.setStrokeStyle(1, 0xffffff);
     this.powerUps.push(drop);
   }
 
@@ -613,10 +626,10 @@ export class PlayScene extends Phaser.Scene {
       case PowerUpType.FireBall:
         this.fireBall = true;
         // Visual indicator
-        this.balls.forEach(b => b.setFillStyle(0xff6600));
+        this.balls.forEach(b => b.setTint(0xff6600));
         this.time.delayedCall(8000, () => {
           this.fireBall = false;
-          this.balls.forEach(b => b.setFillStyle(0xffffff));
+          this.balls.forEach(b => b.clearTint());
           gameEventBus.emit('powerup:expire', { type });
         });
         break;
@@ -626,12 +639,11 @@ export class PlayScene extends Phaser.Scene {
   private spawnExtraBalls(count: number): void {
     for (let i = 0; i < count; i++) {
       const { height } = this.scale;
-      const ball = this.add.circle(
+      const ball = this.add.image(
         this.paddle.x + (i - count / 2) * 20,
         height - 80,
-        this.config.ball.radius,
-        0xffffff
-      );
+        'ball'
+      ).setDisplaySize(this.config.ball.radius * 3, this.config.ball.radius * 3);
       const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.2;
       this.balls.push(ball);
       this.ballVelocities.push({
@@ -642,7 +654,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private setPaddleWidth(width: number): void {
-    this.paddle.width = width;
+    this.paddle.setDisplaySize(width, this.config.paddle.height);
     this.config.paddle.width = width;
   }
 
@@ -655,7 +667,7 @@ export class PlayScene extends Phaser.Scene {
 
   private activateLaser(): void {
     this.hasLaser = true;
-    this.paddle.setFillStyle(0xff44ff);
+    this.paddle.setTint(0xff44ff);
     if (this.laserTimer) this.laserTimer.destroy();
 
     this.laserTimer = this.time.addEvent({
@@ -663,17 +675,17 @@ export class PlayScene extends Phaser.Scene {
       loop: true,
       callback: () => {
         if (!this.hasLaser) return;
-        const laser = this.add.rectangle(
+        const laser = this.add.image(
           this.paddle.x, this.paddle.y - this.config.paddle.height,
-          4, 16, 0xff44ff
-        );
+          'laser'
+        ).setTint(0xff44ff).setDisplaySize(4, 16);
         this.lasers.push(laser);
       },
     });
 
     this.time.delayedCall(8000, () => {
       this.hasLaser = false;
-      this.paddle.setFillStyle(0x6d5dfc);
+      this.paddle.setTint(0x6d5dfc);
       if (this.laserTimer) this.laserTimer.destroy();
       gameEventBus.emit('powerup:expire', { type: PowerUpType.Laser });
     });
@@ -738,31 +750,30 @@ export class PlayScene extends Phaser.Scene {
 
   private applyRuntimeConfig(config: GameConfig): void {
     this.config = config;
+    if (!this.cameras?.main) return;
     this.cameras.main.setBackgroundColor(config.visual.backgroundColor);
-    this.paddle.width = config.paddle.width;
-    this.paddle.height = config.paddle.height;
+    this.paddle.setDisplaySize(config.paddle.width, config.paddle.height);
     this.balls.forEach(b => {
-      b.radius = config.ball.radius;
-      b.setDisplaySize(config.ball.radius * 2, config.ball.radius * 2);
+      b.setDisplaySize(config.ball.radius * 3, config.ball.radius * 3);
     });
   }
 
   // --- Collision helpers ---
 
   private circleRectOverlap(
-    circle: Phaser.GameObjects.Arc,
+    ball: Phaser.GameObjects.Image,
     radius: number,
-    rect: Phaser.GameObjects.Rectangle
+    rect: Phaser.GameObjects.Image
   ): boolean {
     const bounds = rect.getBounds();
-    const closestX = Phaser.Math.Clamp(circle.x, bounds.left, bounds.right);
-    const closestY = Phaser.Math.Clamp(circle.y, bounds.top, bounds.bottom);
-    const dx = circle.x - closestX;
-    const dy = circle.y - closestY;
+    const closestX = Phaser.Math.Clamp(ball.x, bounds.left, bounds.right);
+    const closestY = Phaser.Math.Clamp(ball.y, bounds.top, bounds.bottom);
+    const dx = ball.x - closestX;
+    const dy = ball.y - closestY;
     return (dx * dx + dy * dy) < (radius * radius);
   }
 
-  private rectOverlap(a: Phaser.GameObjects.Rectangle, b: Phaser.GameObjects.Rectangle): boolean {
+  private rectOverlap(a: Phaser.GameObjects.Image, b: Phaser.GameObjects.Image): boolean {
     const ab = a.getBounds();
     const bb = b.getBounds();
     return ab.left < bb.right && ab.right > bb.left && ab.top < bb.bottom && ab.bottom > bb.top;

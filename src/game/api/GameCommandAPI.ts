@@ -15,7 +15,6 @@ export class GameCommandAPI {
   private stats: GameStats = structuredClone(DEFAULT_STATS);
   private currentLevel: LevelSpec | null = null;
   private currentLevelIndex = 0;
-  private phaserScene: Phaser.Scene | null = null;
   private _onConfigChange?: (config: GameConfig) => void;
   private _onStatsChange?: (stats: GameStats) => void;
   private _onLevelLoad?: (level: LevelSpec) => void;
@@ -60,7 +59,7 @@ export class GameCommandAPI {
   // --- Scene binding ---
 
   bindScene(_scene: Phaser.Scene): void {
-      // Reserved for future use
+    // Reserved for future use
   }
 
   // --- Callback registration (React subscribes here) ---

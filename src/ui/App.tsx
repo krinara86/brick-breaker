@@ -4,12 +4,12 @@ import { gameAPI } from '../game/api/GameCommandAPI';
 import { GameStats, DEFAULT_STATS } from '../types/stats';
 import { GameConfig, DEFAULT_CONFIG } from '../types/config';
 import { ChatPanel } from './components/ChatPanel';
-import { NarratorLog } from './components/NarratorLog';
+import { NarratorSidebar } from './components/NarratorSidebar';
 import { StatusBar } from './components/StatusBar';
 import { hfClient, narrator } from '../llm';
 import './App.css';
 
-const MAX_NARRATOR_MESSAGES = 5;
+const MAX_NARRATOR_MESSAGES = 20;
 
 export const App: React.FC = () => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
@@ -56,11 +56,10 @@ export const App: React.FC = () => {
       </header>
 
       <main className="app-main">
-        <div className="game-column">
-          <div className="game-wrapper">
-            <div ref={gameContainerRef} className="game-container" />
-          </div>
-          <NarratorLog messages={narratorMessages} />
+        <NarratorSidebar messages={narratorMessages} />
+
+        <div className="game-wrapper">
+          <div ref={gameContainerRef} className="game-container" />
         </div>
 
         {isChatOpen && (

@@ -12,6 +12,12 @@ export class GameOverScene extends Phaser.Scene {
 
     this.cameras.main.setBackgroundColor('#0c0c0f');
 
+    // Subtle grid
+    const grid = this.add.graphics();
+    grid.lineStyle(1, 0xffffff, 0.03);
+    for (let x = 0; x <= width; x += 40) grid.lineBetween(x, 0, x, height);
+    for (let y = 0; y <= height; y += 40) grid.lineBetween(0, y, width, y);
+
     // Title
     this.add.text(width / 2, height * 0.2, 'GAME OVER', {
       fontSize: '36px',
