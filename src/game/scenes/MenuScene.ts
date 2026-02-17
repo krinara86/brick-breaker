@@ -9,56 +9,51 @@ export class MenuScene extends Phaser.Scene {
     const { width, height } = this.scale;
 
     // Background
-    this.cameras.main.setBackgroundColor('#0a0a1a');
+    this.cameras.main.setBackgroundColor('#0c0c0f');
 
     // Title
-    this.add.text(width / 2, height * 0.25, 'BRICK\nBREAKER', {
-      fontSize: '64px',
-      fontFamily: 'monospace',
-      color: '#00ffcc',
+    this.add.text(width / 2, height * 0.28, 'BRICK\nBREAKER', {
+      fontSize: '52px',
+      fontFamily: '"IBM Plex Mono", monospace',
+      color: '#e4e4e9',
       align: 'center',
-      stroke: '#003322',
-      strokeThickness: 4,
+      letterSpacing: 8,
     }).setOrigin(0.5);
 
     // Subtitle
-    this.add.text(width / 2, height * 0.48, 'with AI powers', {
-      fontSize: '18px',
-      fontFamily: 'monospace',
-      color: '#667788',
+    this.add.text(width / 2, height * 0.47, 'with AI powers', {
+      fontSize: '14px',
+      fontFamily: '"Inter", sans-serif',
+      color: '#55555f',
       align: 'center',
     }).setOrigin(0.5);
 
     // Start button
-    const startBtn = this.add.text(width / 2, height * 0.62, '[ START GAME ]', {
-      fontSize: '28px',
-      fontFamily: 'monospace',
+    const startBtn = this.add.text(width / 2, height * 0.6, 'START GAME', {
+      fontSize: '16px',
+      fontFamily: '"Inter", sans-serif',
       color: '#ffffff',
-      backgroundColor: '#1a3a5a',
-      padding: { x: 24, y: 12 },
+      backgroundColor: '#6d5dfc',
+      padding: { x: 32, y: 12 },
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
-    startBtn.on('pointerover', () => startBtn.setColor('#00ffcc'));
-    startBtn.on('pointerout', () => startBtn.setColor('#ffffff'));
+    startBtn.on('pointerover', () => {
+      startBtn.setStyle({ backgroundColor: '#5848c9' });
+    });
+    startBtn.on('pointerout', () => {
+      startBtn.setStyle({ backgroundColor: '#6d5dfc' });
+    });
     startBtn.on('pointerdown', () => {
       this.scene.start('Play');
     });
 
     // Instructions
-    this.add.text(width / 2, height * 0.78, 'Mouse or Arrow Keys to move paddle\nSpace to launch ball\nP to pause', {
-      fontSize: '14px',
-      fontFamily: 'monospace',
-      color: '#556677',
+    this.add.text(width / 2, height * 0.76, 'Mouse or Arrow Keys to move\nSpace to launch  ·  P to pause', {
+      fontSize: '12px',
+      fontFamily: '"Inter", sans-serif',
+      color: '#55555f',
       align: 'center',
+      lineSpacing: 6,
     }).setOrigin(0.5);
-
-    // Flicker animation on title
-    this.tweens.add({
-      targets: this.children.list[1], // Title text
-      alpha: { from: 0.8, to: 1 },
-      duration: 1500,
-      yoyo: true,
-      repeat: -1,
-    });
   }
 }

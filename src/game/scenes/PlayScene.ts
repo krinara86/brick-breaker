@@ -6,13 +6,13 @@ import { GameConfig } from '../../types/config';
 
 /** Color mapping for brick types and hit counts */
 const BRICK_COLORS: Record<string, number> = {
-  standard: 0x4488ff,
-  multi_3: 0xff4444,
-  multi_2: 0xff8844,
-  multi_1: 0xffcc44,
-  indestructible: 0x888888,
-  powerup: 0x44ff88,
-  explosive: 0xff44ff,
+  standard: 0x5b8def,
+  multi_3: 0xef5b5b,
+  multi_2: 0xf0923b,
+  multi_1: 0xf0c43b,
+  indestructible: 0x4a4a58,
+  powerup: 0x34d399,
+  explosive: 0xc084fc,
 };
 
 const POWERUP_COLORS: Record<string, number> = {
@@ -71,6 +71,12 @@ export class PlayScene extends Phaser.Scene {
   private readonly GAME_TOP = 50;
   private readonly BRICK_PADDING = 4;
 
+  // Registered keys
+  private keyLeft!: Phaser.Input.Keyboard.Key;
+  private keyRight!: Phaser.Input.Keyboard.Key;
+  private keyA!: Phaser.Input.Keyboard.Key;
+  private keyD!: Phaser.Input.Keyboard.Key;
+
   constructor() {
     super({ key: 'Play' });
   }
@@ -83,26 +89,26 @@ export class PlayScene extends Phaser.Scene {
 
     // --- HUD ---
     this.scoreText = this.add.text(16, 12, 'Score: 0', {
-      fontSize: '16px', fontFamily: 'monospace', color: '#00ffcc',
+      fontSize: '13px', fontFamily: '"IBM Plex Mono", monospace', color: '#e4e4e9',
     });
     this.livesText = this.add.text(width - 16, 12, 'Lives: 3', {
-      fontSize: '16px', fontFamily: 'monospace', color: '#ff6666',
+      fontSize: '13px', fontFamily: '"IBM Plex Mono", monospace', color: '#f87171',
     }).setOrigin(1, 0);
     this.levelText = this.add.text(width / 2, 12, 'Level 1', {
-      fontSize: '16px', fontFamily: 'monospace', color: '#aaaacc',
+      fontSize: '13px', fontFamily: '"IBM Plex Mono", monospace', color: '#888896',
     }).setOrigin(0.5, 0);
     this.comboText = this.add.text(width / 2, 32, '', {
-      fontSize: '14px', fontFamily: 'monospace', color: '#ffcc44',
+      fontSize: '12px', fontFamily: '"IBM Plex Mono", monospace', color: '#fbbf24',
     }).setOrigin(0.5, 0);
     this.messageText = this.add.text(width / 2, height / 2, '', {
-      fontSize: '24px', fontFamily: 'monospace', color: '#ffffff', align: 'center',
+      fontSize: '20px', fontFamily: '"Inter", sans-serif', color: '#e4e4e9', align: 'center',
     }).setOrigin(0.5).setAlpha(0);
 
     // --- Paddle ---
     this.paddle = this.add.rectangle(
       width / 2, height - 40,
       this.config.paddle.width, this.config.paddle.height,
-      0x00ffcc
+      0x6d5dfc
     );
 
     // --- Particle emitter ---
@@ -120,11 +126,12 @@ export class PlayScene extends Phaser.Scene {
 
     // --- Load level ---
     gameAPI.bindScene(this);
-    gameAPI.startGame();
 
-    // Subscribe to level loads
+    // Subscribe BEFORE starting so we catch the first level load
     gameAPI.onLevelLoad((level) => this.buildLevel(level));
     gameAPI.onConfigChange((config) => this.applyRuntimeConfig(config));
+
+    gameAPI.startGame();
 
     // --- Input ---
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
@@ -137,8 +144,18 @@ export class PlayScene extends Phaser.Scene {
     });
 
     const keys = this.input.keyboard!;
-    keys.on('keydown-SPACE', () => this.launchBall());
-    keys.on('keydown-P', () => this.togglePause());
+    this.keyLeft = keys.addKey('LEFT');
+    this.keyRight = keys.addKey('RIGHT');
+    this.keyA = keys.addKey('A', false, false);  // no capture — lets browser handle typing
+    this.keyD = keys.addKey('D', false, false);
+    keys.on('keydown-SPACE', () => {
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+      this.launchBall();
+    });
+    keys.on('keydown-P', () => {
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+      this.togglePause();
+    });
 
     // Listen for config changes from LLM
     gameEventBus.on('game:configChanged', () => {
@@ -156,14 +173,16 @@ export class PlayScene extends Phaser.Scene {
 
     const dt = delta / 1000;
     const { width, height } = this.scale;
-    const keys = this.input.keyboard!;
 
-    // Keyboard paddle movement
-    if (keys.addKey('LEFT').isDown || keys.addKey('A').isDown) {
-      this.paddle.x -= this.config.paddle.speed * dt;
-    }
-    if (keys.addKey('RIGHT').isDown || keys.addKey('D').isDown) {
-      this.paddle.x += this.config.paddle.speed * dt;
+    // Keyboard paddle movement (skip when typing in chat)
+    const isTyping = document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA';
+    if (!isTyping) {
+      if (this.keyLeft.isDown || this.keyA.isDown) {
+        this.paddle.x -= this.config.paddle.speed * dt;
+      }
+      if (this.keyRight.isDown || this.keyD.isDown) {
+        this.paddle.x += this.config.paddle.speed * dt;
+      }
     }
     this.paddle.x = Phaser.Math.Clamp(
       this.paddle.x, this.config.paddle.width / 2, width - this.config.paddle.width / 2
@@ -654,7 +673,7 @@ export class PlayScene extends Phaser.Scene {
 
     this.time.delayedCall(8000, () => {
       this.hasLaser = false;
-      this.paddle.setFillStyle(0x00ffcc);
+      this.paddle.setFillStyle(0x6d5dfc);
       if (this.laserTimer) this.laserTimer.destroy();
       gameEventBus.emit('powerup:expire', { type: PowerUpType.Laser });
     });

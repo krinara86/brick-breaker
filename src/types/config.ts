@@ -70,7 +70,7 @@ export const DEFAULT_CONFIG: GameConfig = {
     comboTimeout: 2000,
   },
   visual: {
-    backgroundColor: '#0a0a1a',
+    backgroundColor: '#0c0c0f',
     particlesEnabled: true,
     screenShake: true,
   },

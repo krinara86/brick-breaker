@@ -13,7 +13,7 @@ export interface HFResponse {
 
 /**
  * HuggingFace Inference API client.
- * Wraps the text generation endpoint with error handling and rate limiting.
+ * Uses the OpenAI-compatible chat completions endpoint at router.huggingface.co
  */
 export class HFClient {
   private apiKey: string;
@@ -23,7 +23,7 @@ export class HFClient {
 
   constructor(apiKey?: string, model?: string) {
     this.apiKey = apiKey || import.meta.env.VITE_HF_API_KEY || '';
-    this.model = model || import.meta.env.VITE_HF_MODEL || 'mistralai/Mistral-7B-Instruct-v0.3';
+    this.model = model || import.meta.env.VITE_HF_MODEL || 'Qwen/Qwen2.5-72B-Instruct';
   }
 
   isConfigured(): boolean {
@@ -48,13 +48,15 @@ export class HFClient {
     this.lastCallTime = Date.now();
 
     try {
-      // Build the prompt in instruction format
-      const fullPrompt = options.systemPrompt
-        ? `<s>[INST] ${options.systemPrompt}\n\n${options.prompt} [/INST]`
-        : `<s>[INST] ${options.prompt} [/INST]`;
+      // Build messages in OpenAI chat format
+      const messages: Array<{ role: string; content: string }> = [];
+      if (options.systemPrompt) {
+        messages.push({ role: 'system', content: options.systemPrompt });
+      }
+      messages.push({ role: 'user', content: options.prompt });
 
       const response = await fetch(
-        `https://api-inference.huggingface.co/models/${this.model}`,
+        'https://router.huggingface.co/v1/chat/completions',
         {
           method: 'POST',
           headers: {
@@ -62,20 +64,16 @@ export class HFClient {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            inputs: fullPrompt,
-            parameters: {
-              max_new_tokens: options.maxTokens ?? 1024,
-              temperature: options.temperature ?? 0.7,
-              return_full_text: false,
-              do_sample: true,
-            },
+            model: this.model,
+            messages,
+            max_tokens: options.maxTokens ?? 1024,
+            temperature: options.temperature ?? 0.7,
           }),
         }
       );
 
       if (!response.ok) {
         const errorText = await response.text();
-        // Model loading case
         if (response.status === 503) {
           return {
             success: false,
@@ -91,7 +89,7 @@ export class HFClient {
       }
 
       const data = await response.json();
-      const text = Array.isArray(data) ? data[0]?.generated_text ?? '' : data.generated_text ?? '';
+      const text = data.choices?.[0]?.message?.content ?? '';
 
       return { success: true, text: text.trim() };
     } catch (err) {
@@ -110,7 +108,7 @@ export class HFClient {
   async completeJSON<T>(options: HFCompletionOptions): Promise<{ success: boolean; data?: T; error?: string }> {
     const response = await this.complete({
       ...options,
-      temperature: options.temperature ?? 0.3, // Lower temp for structured output
+      temperature: options.temperature ?? 0.3,
     });
 
     if (!response.success) {
@@ -118,10 +116,8 @@ export class HFClient {
     }
 
     try {
-      // Try to extract JSON from the response
       const jsonMatch = response.text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        // Try array format
         const arrayMatch = response.text.match(/\[[\s\S]*\]/);
         if (arrayMatch) {
           const data = JSON.parse(arrayMatch[0]) as T;

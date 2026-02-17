@@ -13,7 +13,7 @@ export function createGame(parent: string | HTMLElement): Phaser.Game {
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
     parent,
-    backgroundColor: '#0a0a1a',
+    backgroundColor: '#0c0c0f',
     scene: [BootScene, MenuScene, PlayScene, GameOverScene],
     scale: {
       mode: Phaser.Scale.FIT,
