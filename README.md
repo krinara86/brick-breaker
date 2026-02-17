@@ -1,5 +1,9 @@
 # 🧱 Brick Breaker — AI Powered
 
+
+> [!IMPORTANT]
+> This is created using AI (Claude Opus 4.6 Extended thinking enabled). Use it at your own peril as human eye reviews are not complete yet.
+
 A classic Brick Breaker game with AI features: generate levels from text descriptions, modify game settings with natural language, and get real-time AI commentary on your gameplay.
 
 Built with Phaser 3, TypeScript, React, and HuggingFace AI.
