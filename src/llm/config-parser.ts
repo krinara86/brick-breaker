@@ -29,7 +29,7 @@ export class ConfigParser {
     return validated;
   }
 
-  private validatePatch(raw: Record<string, unknown>): { success: boolean; patch?: ConfigPatch; error?: string } {
+  private validatePatch(raw: ConfigPatch): { success: boolean; patch?: ConfigPatch; error?: string } {
     const validSections = new Set(['ball', 'paddle', 'gameplay', 'visual']);
     const patch: ConfigPatch = {};
 

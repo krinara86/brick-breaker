@@ -9,26 +9,24 @@ export const NarratorLog: React.FC<NarratorLogProps> = ({ messages }) => {
 
   useEffect(() => {
     if (logRef.current) {
-      logRef.current.scrollTop = logRef.current.scrollHeight;
+      logRef.current.scrollLeft = logRef.current.scrollWidth;
     }
   }, [messages]);
 
   if (messages.length === 0) return null;
 
-  const visible = messages.slice(-2); // Show last 2 messages
-
   return (
     <div className="narrator-log">
       <span className="narrator-label">🎙️</span>
       <div className="narrator-messages" ref={logRef}>
-        {visible.map((msg, i) => (
-          <div
+        {messages.map((msg, i) => (
+          <span
             key={i}
             className="narrator-msg"
-            style={{ opacity: i === visible.length - 1 ? 1 : 0.5 }}
+            style={{ opacity: 0.4 + (0.6 * (i + 1)) / messages.length }}
           >
             {msg}
-          </div>
+          </span>
         ))}
       </div>
     </div>

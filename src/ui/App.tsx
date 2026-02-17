@@ -67,6 +67,7 @@ export const App: React.FC = () => {
           <ChatPanel
             onClose={() => setIsChatOpen(false)}
             llmConfigured={llmConfigured}
+            onKeySet={() => setLlmConfigured(hfClient.isConfigured())}
           />
         )}
       </main>

@@ -59,8 +59,8 @@ export class GameCommandAPI {
 
   // --- Scene binding ---
 
-  bindScene(scene: Phaser.Scene): void {
-    this.phaserScene = scene;
+  bindScene(_scene: Phaser.Scene): void {
+      // Reserved for future use
   }
 
   // --- Callback registration (React subscribes here) ---

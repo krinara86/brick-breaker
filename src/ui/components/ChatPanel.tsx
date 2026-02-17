@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { gameAPI } from '../../game/api/GameCommandAPI';
-import { levelGenerator, configParser, narrator } from '../../llm';
+import { levelGenerator, configParser, narrator, hfClient } from '../../llm';
 import type { NarratorPersonality } from '../../llm';
 
 type ChatTab = 'config' | 'levels' | 'narrator';
@@ -14,16 +14,19 @@ interface ChatMessage {
 interface ChatPanelProps {
   onClose: () => void;
   llmConfigured: boolean;
+  onKeySet: () => void;
 }
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({ onClose, llmConfigured }) => {
+export const ChatPanel: React.FC<ChatPanelProps> = ({ onClose, llmConfigured, onKeySet }) => {
   const [activeTab, setActiveTab] = useState<ChatTab>('config');
+  const [keyInput, setKeyInput] = useState('');
+  const needsKey = !llmConfigured && !hfClient.envConfigured;
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '0',
       text: llmConfigured
         ? 'AI connected! Type commands to modify the game.'
-        : 'AI not configured. Add VITE_HF_API_KEY to .env for LLM features. Fallback mode active.',
+        : 'Enter your HuggingFace API key above to enable AI features, or play without them.',
       type: llmConfigured ? 'success' : 'system',
     },
   ]);
@@ -145,6 +148,40 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onClose, llmConfigured }) 
         <h3>🤖 AI Controls</h3>
         <button className="chat-toggle" onClick={onClose} style={{ padding: '4px 8px', fontSize: '11px' }}>✕</button>
       </div>
+
+      {needsKey && (
+        <div className="api-key-input">
+          <label>HuggingFace API Key</label>
+          <div className="api-key-row">
+            <input
+              className="chat-input"
+              type="password"
+              value={keyInput}
+              onChange={(e) => setKeyInput(e.target.value)}
+              placeholder="hf_..."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && keyInput.trim()) {
+                  hfClient.setApiKey(keyInput.trim());
+                  onKeySet();
+                  addMessage('✓ API key set for this session.', 'success');
+                }
+              }}
+            />
+            <button
+              className="chat-send"
+              disabled={!keyInput.trim()}
+              onClick={() => {
+                hfClient.setApiKey(keyInput.trim());
+                onKeySet();
+                addMessage('✓ API key set for this session.', 'success');
+              }}
+            >
+              Set
+            </button>
+          </div>
+          <span className="api-key-hint">Key is only stored in memory — never saved or transmitted elsewhere.</span>
+        </div>
+      )}
 
       <div className="chat-tabs">
         <button

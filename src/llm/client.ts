@@ -20,10 +20,22 @@ export class HFClient {
   private model: string;
   private lastCallTime = 0;
   private minInterval = 1000; // ms between calls
+  private _envConfigured: boolean;
 
   constructor(apiKey?: string, model?: string) {
     this.apiKey = apiKey || import.meta.env.VITE_HF_API_KEY || '';
     this.model = model || import.meta.env.VITE_HF_MODEL || 'Qwen/Qwen2.5-72B-Instruct';
+    this._envConfigured = this.isConfigured();
+  }
+
+  /** True if the key was set via .env (no runtime input needed) */
+  get envConfigured(): boolean {
+    return this._envConfigured;
+  }
+
+  /** Set API key at runtime (from user input) */
+  setApiKey(key: string): void {
+    this.apiKey = key.trim();
   }
 
   isConfigured(): boolean {
