@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { GameStats } from '../../types/stats';
 import { GameConfig } from '../../types/config';
+import { highScores } from '../../game/highscores';
 
 interface StatusBarProps {
   stats: GameStats;
@@ -9,12 +10,22 @@ interface StatusBarProps {
 }
 
 export const StatusBar: React.FC<StatusBarProps> = ({ stats, llmConfigured }) => {
+  const topScore = useMemo(() => highScores.getTopScore(), []);
+
   return (
     <div className="status-bar">
       <div className="status-item">
         <span>Score:</span>
         <span className="status-value">{stats.score}</span>
       </div>
+      {topScore > 0 && (
+        <div className="status-item">
+          <span>Best:</span>
+          <span className="status-value" style={{ color: stats.score > topScore ? '#f59e0b' : undefined }}>
+            {topScore}
+          </span>
+        </div>
+      )}
       <div className="status-item">
         <span>Level:</span>
         <span className="status-value">{stats.level}</span>

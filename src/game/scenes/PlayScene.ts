@@ -6,7 +6,7 @@ import { GameConfig } from '../../types/config';
 
 /** Modern color palette for bricks */
 const BRICK_COLORS: Record<string, number> = {
-  standard: 0x3b82f6,    // bright blue
+  standard: 0x3b82f6,    // bright blue (fallback)
   multi_3: 0xef4444,      // red
   multi_2: 0xf59e0b,      // amber
   multi_1: 0xeab308,      // yellow
@@ -14,6 +14,22 @@ const BRICK_COLORS: Record<string, number> = {
   powerup: 0x10b981,      // emerald
   explosive: 0xa855f7,    // purple
 };
+
+/** Row-based colors for standard bricks — cycles through for variety */
+const ROW_COLORS: number[] = [
+  0xef4444,  // red
+  0xf97316,  // orange
+  0xeab308,  // yellow
+  0x22c55e,  // green
+  0x06b6d4,  // cyan
+  0x3b82f6,  // blue
+  0x8b5cf6,  // violet
+  0xec4899,  // pink
+  0xf43f5e,  // rose
+  0x14b8a6,  // teal
+  0x84cc16,  // lime
+  0xe879f9,  // fuchsia
+];
 
 const POWERUP_COLORS: Record<string, number> = {
   [PowerUpType.MultiBall]: 0x06b6d4,   // cyan
@@ -97,6 +113,11 @@ export class PlayScene extends Phaser.Scene {
     for (let y = 0; y <= height; y += 40) {
       bgGrid.lineBetween(0, y, width, y);
     }
+
+    // --- Play area border ---
+    const border = this.add.graphics();
+    border.lineStyle(2, 0x39ff14, 0.8); // neon green, distinct from all game objects
+    border.strokeRect(0, this.GAME_TOP, width, height - this.GAME_TOP);
 
     // --- HUD ---
     this.scoreText = this.add.text(16, 12, 'Score: 0', {
@@ -795,9 +816,12 @@ export class PlayScene extends Phaser.Scene {
     return ab.left < bb.right && ab.right > bb.left && ab.top < bb.bottom && ab.bottom > bb.top;
   }
 
-  private getBrickColor(def: { type: BrickType; hits?: number }): number {
+  private getBrickColor(def: { type: BrickType; hits?: number; row?: number }): number {
     if (def.type === BrickType.Multi) {
       return BRICK_COLORS[`multi_${Math.min(def.hits ?? 1, 3)}`] ?? BRICK_COLORS.multi_1;
+    }
+    if (def.type === BrickType.Standard && def.row != null) {
+      return ROW_COLORS[def.row % ROW_COLORS.length];
     }
     return BRICK_COLORS[def.type] ?? 0x4488ff;
   }

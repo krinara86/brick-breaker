@@ -46,15 +46,25 @@ export enum PowerUpType {
 export const BUILT_IN_LEVELS: LevelSpec[] = [
   {
     name: 'Classic',
-    description: 'The original brick wall',
+    description: 'The original brick wall with a twist',
     gridCols: 10,
     gridRows: 6,
-    bricks: Array.from({ length: 60 }, (_, i) => ({
-      row: Math.floor(i / 10),
-      col: i % 10,
-      type: BrickType.Standard,
-      hits: 1,
-    })),
+    bricks: Array.from({ length: 60 }, (_, i) => {
+      const row = Math.floor(i / 10);
+      const col = i % 10;
+      // Row 0: multi-hit bricks (3 hits)
+      if (row === 0) return { row, col, type: BrickType.Multi, hits: 3 };
+      // Row 1: explosive bricks
+      if (row === 1) return { row, col, type: BrickType.Explosive, hits: 1 };
+      // Row 2: powerup bricks at col 3 and 6, explosive at col 5
+      if (row === 2 && col === 3) return { row, col, type: BrickType.PowerUp, hits: 1, powerUp: PowerUpType.WidePaddle };
+      if (row === 2 && col === 6) return { row, col, type: BrickType.PowerUp, hits: 1, powerUp: PowerUpType.MultiBall };
+      if (row === 2 && col === 5) return { row, col, type: BrickType.Explosive, hits: 1 };
+      // Row 4: multi-hit (2 hits)
+      if (row === 4) return { row, col, type: BrickType.Multi, hits: 2 };
+      // Everything else: standard
+      return { row, col, type: BrickType.Standard, hits: 1 };
+    }),
   },
   {
     name: 'Fortress',

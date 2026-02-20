@@ -32,7 +32,7 @@ export const App: React.FC = () => {
     });
 
     setLlmConfigured(hfClient.isConfigured());
-    narrator.start('hype');
+    // narrator.start('hype'); // disabled by default — will improve narration later
 
     return () => {
       gameRef.current?.destroy(true);

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { highScores } from '../highscores';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -62,6 +63,16 @@ export class MenuScene extends Phaser.Scene {
     startBtn.on('pointerover', () => startBtn.setStyle({ backgroundColor: '#5848c9' }));
     startBtn.on('pointerout', () => startBtn.setStyle({ backgroundColor: '#6d5dfc' }));
     startBtn.on('pointerdown', () => this.scene.start('Play'));
+
+    // High score
+    const topScore = highScores.getTopScore();
+    if (topScore > 0) {
+      this.add.text(width / 2, height * 0.68, `Best Score: ${topScore}`, {
+        fontSize: '13px',
+        fontFamily: '"IBM Plex Mono", monospace',
+        color: '#f59e0b',
+      }).setOrigin(0.5);
+    }
 
     // Instructions
     this.add.text(width / 2, height * 0.76, 'Mouse or Arrow Keys to move\nSpace to launch  ·  P to pause', {
