@@ -480,15 +480,19 @@ export class PlayScene extends Phaser.Scene {
 
       // Fireball passes through (except indestructible)
       if (!this.fireBall || brick.brickData.type === BrickType.Indestructible) {
-        // Determine bounce direction
+        // Determine bounce direction and push ball out of brick
         const brickBounds = brick.getBounds();
-        const dx = ball.x - Phaser.Math.Clamp(ball.x, brickBounds.left, brickBounds.right);
-        const dy = ball.y - Phaser.Math.Clamp(ball.y, brickBounds.top, brickBounds.bottom);
+        const closestX = Phaser.Math.Clamp(ball.x, brickBounds.left, brickBounds.right);
+        const closestY = Phaser.Math.Clamp(ball.y, brickBounds.top, brickBounds.bottom);
+        const dx = ball.x - closestX;
+        const dy = ball.y - closestY;
 
         if (Math.abs(dx) > Math.abs(dy)) {
-          vel.x = -vel.x;
+          vel.x = dx >= 0 ? Math.abs(vel.x) : -Math.abs(vel.x);
+          ball.x = dx >= 0 ? brickBounds.right + this.config.ball.radius : brickBounds.left - this.config.ball.radius;
         } else {
-          vel.y = -vel.y;
+          vel.y = dy >= 0 ? Math.abs(vel.y) : -Math.abs(vel.y);
+          ball.y = dy >= 0 ? brickBounds.bottom + this.config.ball.radius : brickBounds.top - this.config.ball.radius;
         }
       }
 
